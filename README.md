@@ -58,7 +58,7 @@ npm install -g craftdesk
 Verify installation:
 ```bash
 craftdesk --version
-# 0.1.0
+# 0.2.0
 ```
 
 ### Local Development Setup
@@ -75,7 +75,7 @@ craftdesk --version
 
 ### Requirements
 
-- Node.js >= 16.0.0
+- Node.js >= 18.0.0
 - Git (for git dependencies)
 - npm or yarn
 
@@ -110,6 +110,9 @@ craftdesk add https://github.com/user/repo/blob/main/skill.md
 # Add from git repository
 craftdesk add git+https://github.com/user/custom-agent.git
 
+# Add from monorepo subdirectory
+craftdesk add https://github.com/user/repo/tree/main/skills/auth
+
 # Add with explicit type
 craftdesk add https://github.com/user/repo/blob/main/agent.md --type agent
 ```
@@ -126,11 +129,17 @@ This installs all dependencies to `.claude/` directory and creates `craftdesk.lo
 
 ```bash
 craftdesk list
-# my-ai-project@1.0.0
-#
-# Installed crafts:
-#   • my-skill@main (skill)
-#   • custom-agent@main (agent)
+```
+
+Output:
+```
+my-ai-project@1.0.0
+
+Installed crafts:
+  • my-skill@main (skill)
+  • custom-agent@main (agent)
+
+Total: 2 crafts installed
 ```
 
 ---
@@ -153,8 +162,10 @@ Declares your project's dependencies:
   "name": "my-project",
   "version": "1.0.0",
   "dependencies": {
-    "ruby-on-rails": "^7.0.0",
-    "postgres-expert": "~1.2.0"
+    "my-skill": {
+      "git": "https://github.com/user/skill.git",
+      "branch": "main"
+    }
   }
 }
 ```
@@ -165,11 +176,16 @@ Records exact versions installed (like package-lock.json or Gemfile.lock):
 ```json
 {
   "version": "1.0.0",
+  "lockfileVersion": 1,
   "crafts": {
-    "ruby-on-rails": {
-      "version": "7.1.2",
-      "resolved": "https://craftdesk.ai/api/v1/crafts/...",
-      "integrity": "sha256-abc123..."
+    "my-skill": {
+      "version": "main",
+      "resolved": "https://github.com/user/skill.git",
+      "integrity": "a1b2c3d4e5f6...",
+      "type": "skill",
+      "git": "https://github.com/user/skill.git",
+      "branch": "main",
+      "commit": "a1b2c3d4e5f6789012345678901234567890abcd"
     }
   }
 }
@@ -286,10 +302,6 @@ craftdesk add git+https://github.com/user/repo.git#main#file:skill.md
 
 # Subdirectory (monorepo)
 craftdesk add git+https://github.com/company/monorepo.git#main#path:skills/auth
-
-# Registry dependencies (when registry is available)
-craftdesk add ruby-on-rails
-craftdesk add @company/private-skill
 ```
 
 ---
@@ -335,9 +347,9 @@ craftdesk list --json
 my-project@1.0.0
 
 Installed crafts:
-  • ruby-on-rails@7.1.2 (skill)
-  • code-reviewer@2.0.1 (agent)
-  • postgres-expert@1.2.3 (skill)
+  • my-skill@main (skill)
+  • code-reviewer@v2.0.1 (agent)
+  • postgres-expert@main (skill)
 
 Total: 3 crafts installed
 ```
@@ -428,58 +440,6 @@ Future registry format:
 
 ---
 
-## Multi-Registry Setup
-
-Configure multiple registries in your craftdesk.json:
-
-```json
-{
-  "name": "enterprise-project",
-  "version": "1.0.0",
-
-  "dependencies": {
-    "ruby-on-rails": "^7.0.0",
-    "@company/private-skill": {
-      "version": "^3.0.0",
-      "registry": "company-private"
-    },
-    "special-tool": {
-      "version": "^2.0.0",
-      "registry": "https://tools.example.com"
-    }
-  },
-
-  "registries": {
-    "default": {
-      "url": "https://craftdesk.ai"
-    },
-    "company-private": {
-      "url": "https://registry.company.com",
-      "scope": "@company"
-    }
-  }
-}
-```
-
-### Authentication
-
-Use environment variables for authentication:
-
-```bash
-# Set auth token for a named registry
-export CRAFTDESK_AUTH_COMPANY_PRIVATE=your-token-here
-
-# Install with authentication
-craftdesk install
-```
-
-**Token naming pattern:**
-- Registry name: `company-private`
-- Environment variable: `CRAFTDESK_AUTH_COMPANY_PRIVATE`
-- Convert to uppercase, replace hyphens with underscores
-
----
-
 ## Monorepo Support
 
 Install multiple crafts from the same git repository using subdirectory paths:
@@ -558,34 +518,26 @@ Complete specification of the craftdesk.json format:
 
   // Dependencies
   "dependencies": {
-    "simple-package": "^1.0.0",
-    "complex-package": {
-      "version": "^2.0.0",
-      "registry": "company-private"
-    },
-    "git-package": {
+    "my-skill": {
       "git": "https://github.com/user/repo.git",
+      "branch": "main"
+    },
+    "auth-handler": {
+      "git": "https://github.com/company/monorepo.git",
+      "tag": "v3.2.0",
+      "path": "skills/auth"
+    },
+    "my-agent": {
+      "git": "https://github.com/user/agents.git",
       "branch": "main",
-      "path": "packages/skill"
+      "file": "agent.md"
     }
   },
 
   "devDependencies": {
-    "test-runner": "^1.0.0"
-  },
-
-  "optionalDependencies": {
-    "experimental-feature": "^0.1.0"
-  },
-
-  // Registry configuration
-  "registries": {
-    "default": {
-      "url": "https://craftdesk.ai"
-    },
-    "company-private": {
-      "url": "https://registry.company.com",
-      "scope": "@company"
+    "test-runner": {
+      "git": "https://github.com/org/test-tools.git",
+      "branch": "main"
     }
   }
 }
@@ -603,8 +555,6 @@ Complete specification of the craftdesk.json format:
 | `license` | string | No | License identifier (e.g., "MIT") |
 | `dependencies` | object | No | Production dependencies |
 | `devDependencies` | object | No | Development dependencies |
-| `optionalDependencies` | object | No | Optional dependencies |
-| `registries` | object | No | Registry configuration (for future use) |
 
 ---
 
@@ -618,34 +568,28 @@ The lockfile ensures reproducible installations across different machines and ti
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
+  "generatedAt": "2025-11-18T10:30:00.000Z",
   "crafts": {
-    "ruby-on-rails": {
-      "version": "7.1.2",
-      "resolved": "https://craftdesk.ai/api/v1/crafts/.../download",
-      "integrity": "sha256-abc123...",
+    "my-skill": {
+      "version": "main",
+      "resolved": "https://github.com/user/skill.git",
+      "integrity": "a1b2c3d4e5f6789012345678901234567890abcd",
       "type": "skill",
-      "author": "anthropic",
-      "registry": "https://craftdesk.ai",
-      "dependencies": {
-        "activerecord": "^7.1.0"
-      }
-    },
-    "custom-agent": {
-      "version": "2.0.0",
-      "resolved": "https://github.com/user/agent.git",
-      "integrity": "a1b2c3d4e5f6...",
-      "type": "agent",
-      "git": "https://github.com/user/agent.git",
+      "author": "git",
+      "git": "https://github.com/user/skill.git",
       "branch": "main",
       "commit": "a1b2c3d4e5f6789012345678901234567890abcd",
       "dependencies": {}
-    }
-  },
-  "tree": {
-    "ruby-on-rails@7.1.2": {
-      "dependencies": {
-        "activerecord@7.1.0": {}
-      }
+    },
+    "custom-agent": {
+      "version": "v2.0.0",
+      "resolved": "https://github.com/user/agent.git",
+      "integrity": "b2c3d4e5f6789012345678901234567890abcdef",
+      "type": "agent",
+      "git": "https://github.com/user/agent.git",
+      "tag": "v2.0.0",
+      "commit": "b2c3d4e5f6789012345678901234567890abcdef",
+      "dependencies": {}
     }
   }
 }
@@ -688,8 +632,6 @@ jobs:
         run: npm install -g craftdesk
 
       - name: Install AI capabilities
-        env:
-          CRAFTDESK_AUTH_COMPANY: ${{ secrets.CRAFTDESK_TOKEN }}
         run: craftdesk install --production
 
       - name: Deploy
@@ -703,7 +645,6 @@ deploy:
   image: node:18
   script:
     - npm install -g craftdesk
-    - export CRAFTDESK_AUTH_COMPANY=$CRAFTDESK_TOKEN
     - craftdesk install --production
     - ./deploy.sh
   only:
@@ -723,8 +664,6 @@ WORKDIR /app
 COPY craftdesk.json craftdesk.lock ./
 
 # Install AI capabilities
-ARG CRAFTDESK_AUTH_COMPANY
-ENV CRAFTDESK_AUTH_COMPANY=$CRAFTDESK_AUTH_COMPANY
 RUN craftdesk install --production
 
 # Copy rest of application
@@ -746,8 +685,8 @@ Make sure you're in a directory with a craftdesk.json file, or run `craftdesk in
 #### `Failed to resolve dependencies`
 
 - Check internet connection
-- Verify registry URLs are accessible
-- For private registries, ensure auth tokens are set
+- Verify git repository URLs are accessible
+- For private repos, ensure SSH keys or access tokens are configured
 - Try `craftdesk install --no-lockfile` to re-resolve
 
 #### `Git clone failed`
@@ -802,7 +741,7 @@ npm link
 ### Project Structure
 
 ```
-craftdesk-cli/
+craftdesk/
 ├── src/
 │   ├── commands/       # CLI commands
 │   ├── services/       # Core services

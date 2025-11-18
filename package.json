@@ -1,7 +1,7 @@
 {
-  "name": "craftdesk-cli",
-  "version": "0.1.0",
-  "description": "CLI for managing CraftDesk AI capabilities",
+  "name": "craftdesk",
+  "version": "0.2.0",
+  "description": "Package manager for Claude Code skills and agents",
   "main": "dist/index.js",
   "bin": {
     "craftdesk": "./bin/craftdesk.js"
@@ -40,6 +40,6 @@
     "@vitest/coverage-v8": "^1.0.4"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }
