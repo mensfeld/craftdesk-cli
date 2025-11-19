@@ -1,10 +1,12 @@
 import path from 'path';
 import fs from 'fs-extra';
 import axios from 'axios';
+import AdmZip from 'adm-zip';
 import { logger } from '../utils/logger';
 import { configManager } from './config-manager';
 import { CraftDeskLock, LockEntry } from '../types/craftdesk-lock';
 import { ensureDir } from '../utils/file-system';
+import { verifyFileChecksum, formatChecksum } from '../utils/crypto';
 
 /**
  * Handles installation of crafts from various sources
@@ -126,12 +128,29 @@ export class Installer {
     if (entry.git) {
       await this.installFromGit(craftDir, entry);
     } else {
-      // Download craft archive
-      const archivePath = path.join(craftDir, 'archive.tar.gz');
+      // Download craft archive (ZIP format from CraftDesk registry)
+      const archivePath = path.join(craftDir, 'archive.zip');
       await this.downloadFile(entry.resolved, archivePath);
 
-      // Verify integrity (TODO: implement SHA-256 check)
-      // await this.verifyIntegrity(archivePath, entry.integrity);
+      // Verify integrity using SHA-256 checksum
+      if (entry.integrity) {
+        logger.debug(`Verifying checksum for ${name}...`);
+        const isValid = await verifyFileChecksum(archivePath, entry.integrity);
+
+        if (!isValid) {
+          await fs.remove(archivePath);
+          throw new Error(
+            `Checksum verification failed for ${name}@${entry.version}. ` +
+            `Expected: ${formatChecksum(entry.integrity)}... ` +
+            `This may indicate a corrupted download or a security issue. ` +
+            `Try running 'craftdesk install --no-lockfile' to re-resolve dependencies.`
+          );
+        }
+
+        logger.debug(`Checksum verified: ${formatChecksum(entry.integrity)}...`);
+      } else {
+        logger.warn(`No checksum available for ${name}@${entry.version} - skipping verification`);
+      }
 
       // Extract archive
       await this.extractArchive(archivePath, craftDir);
@@ -235,17 +254,14 @@ export class Installer {
   }
 
   private async extractArchive(archivePath: string, outputDir: string): Promise<void> {
-    // For now, just copy some placeholder files
-    // In production, this would extract a tar.gz or zip archive
-
-    const type = path.basename(outputDir).includes('skill') ? 'SKILL' : 'AGENT';
-    const mainFile = `${type}.md`;
-
-    await fs.writeFile(
-      path.join(outputDir, mainFile),
-      `# ${path.basename(outputDir)}\n\nThis is a placeholder for the ${type.toLowerCase()} content.\n`,
-      'utf-8'
-    );
+    try {
+      // CraftDesk web API returns ZIP archives
+      const zip = new AdmZip(archivePath);
+      zip.extractAllTo(outputDir, /* overwrite */ true);
+      logger.debug(`Extracted ZIP archive to ${outputDir}`);
+    } catch (error: any) {
+      throw new Error(`Failed to extract archive: ${error.message}`);
+    }
   }
 
   private async createMetadata(craftDir: string, name: string, entry: LockEntry): Promise<void> {

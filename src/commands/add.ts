@@ -5,6 +5,9 @@ import { logger } from '../utils/logger';
 import { registryClient } from '../services/registry-client';
 import { installer } from '../services/installer';
 import { gitResolver } from '../services/git-resolver';
+import { calculateFileChecksum } from '../utils/crypto';
+import fs from 'fs-extra';
+import os from 'os';
 
 export function createAddCommand(): Command {
   return new Command('add')
@@ -133,10 +136,41 @@ async function addCommand(craftArg: string, options: any): Promise<void> {
       const version = options.saveExact ? craftInfo.version : versionConstraint;
       depValue = version;
 
+      // Require download_url from API - no localhost fallback for security
+      if (!craftInfo.download_url) {
+        logger.failSpinner();
+        logger.error(`Registry did not provide download URL for ${craftInfo.author}/${craftInfo.name}@${craftInfo.version}`);
+        logger.error('The registry may be misconfigured or the craft version is incomplete.');
+        process.exit(1);
+      }
+
+      const downloadUrl = craftInfo.download_url;
+
+      // Calculate checksum if not provided by API
+      let integrity = craftInfo.integrity;
+      if (!integrity) {
+        logger.startSpinner('Computing checksum for security verification...');
+        const tempDir = path.join(os.tmpdir(), 'craftdesk-verify');
+        const tempFile = path.join(tempDir, `${craftInfo.name}-${craftInfo.version}.zip`);
+
+        try {
+          await fs.ensureDir(tempDir);
+          // Download to temp location
+          await registryClient.downloadCraft(downloadUrl, tempFile);
+          // Calculate checksum
+          integrity = await calculateFileChecksum(tempFile);
+          logger.succeedSpinner(`Checksum computed: ${integrity.substring(0, 12)}...`);
+        } finally {
+          // Clean up temp file and directory
+          await fs.remove(tempFile).catch(() => {});  // Ignore errors if file doesn't exist
+          await fs.remove(tempDir).catch(() => {});   // Ignore errors if directory doesn't exist
+        }
+      }
+
       lockEntry = {
         version: craftInfo.version,
-        resolved: craftInfo.download_url || `http://localhost:3000/api/v1/crafts/${craftInfo.author}/${craftInfo.name}/versions/${craftInfo.version}/download`,
-        integrity: craftInfo.integrity || 'sha256-placeholder',
+        resolved: downloadUrl,
+        integrity: integrity,
         type: craftInfo.type,
         author: craftInfo.author,
         dependencies: craftInfo.dependencies || {}

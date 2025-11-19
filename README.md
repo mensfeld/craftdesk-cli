@@ -172,6 +172,25 @@ Records exact versions installed (like package-lock.json or Gemfile.lock):
 
 **Always commit this file to version control!**
 
+### Security: Checksum Verification
+
+CraftDesk automatically verifies the integrity of downloaded packages:
+
+- **Registry packages**: SHA-256 checksums are computed when you first add a craft and stored in `craftdesk.lock`
+- **Subsequent installs**: The downloaded file is verified against the stored checksum before extraction
+- **MITM protection**: Prevents tampering during download by detecting any modifications
+- **Git packages**: Git commit hashes serve as checksums - stored in the lockfile and verified during clone
+
+**What happens on checksum mismatch:**
+```
+Error: Checksum verification failed for john/rails-api@2.1.0.
+Expected: a1b2c3d4e5f6...
+This may indicate a corrupted download or a security issue.
+Try running 'craftdesk install --no-lockfile' to re-resolve dependencies.
+```
+
+The lockfile contains SHA-256 hashes that ensure reproducible and secure installations across all team members.
+
 ### Install Directory
 
 By default, crafts install to `.claude/` in your project:
@@ -356,9 +375,75 @@ craftdesk init --help
 
 ## Dependency Sources
 
-CraftDesk currently supports Git dependencies. Registry support is under development.
+CraftDesk supports both registry and git dependencies.
 
-### 1. GitHub URLs (Easiest)
+### 1. Registry Dependencies (CraftDesk Web API)
+
+Install crafts from the CraftDesk registry using `author/name` format:
+
+```bash
+# Search for crafts
+craftdesk search kafka
+
+# Get information about a craft
+craftdesk info john/rails-api
+
+# Add from registry
+craftdesk add john/rails-api
+craftdesk add john/rails-api@^2.1.0
+
+# Add with specific version
+craftdesk add jane/postgres-expert@1.2.0
+```
+
+**Registry format in craftdesk.json:**
+
+```json
+{
+  "dependencies": {
+    "john/rails-api": "^2.1.0",
+    "jane/kafka-processing": "~1.5.2",
+    "team/postgres-admin": "latest"
+  },
+  "registries": {
+    "default": {
+      "url": "http://localhost:3000"
+    }
+  }
+}
+```
+
+**Important:** You must configure your registry URL in `craftdesk.json` to use registry-based crafts. Git-based dependencies (GitHub URLs) work without any registry configuration.
+
+**Private Registry Authentication:**
+
+For private registries, set authentication tokens via environment variables:
+
+```bash
+# For a registry named "company-private" in craftdesk.json
+export CRAFTDESK_AUTH_COMPANY_PRIVATE=your_token_here
+
+# For default registry
+export CRAFTDESK_AUTH_DEFAULT=your_token_here
+```
+
+Example `craftdesk.json` with private registry:
+
+```json
+{
+  "registries": {
+    "default": {
+      "url": "https://your-registry.com"
+    },
+    "company-private": {
+      "url": "https://private.company.com",
+      "scope": "@company"
+    }
+  }
+}
+```
+
+### 2. GitHub URLs (Easiest for Git)
 
 Simply paste any GitHub URL - it auto-converts to the correct format:
 
@@ -373,7 +458,7 @@ craftdesk add https://github.com/user/repo/blob/main/agent.md
 craftdesk add https://github.com/user/repo
 ```
 
-### 2. Git Dependencies
+### 3. Git Dependencies
 
 From git repositories:
 
@@ -403,21 +488,6 @@ From git repositories:
 - `commit` - Specific commit hash
 - `path` - Subdirectory within repo (for monorepos)
 - `file` - Direct file path (for single-file crafts)
-
-### 3. Registry Dependencies (Coming Soon)
-
-> **Note:** Registry support is currently under development. A self-hosted registry server will be available soon.
-
-Future registry format:
-
-```json
-{
-  "dependencies": {
-    "ruby-on-rails": "^7.0.0",
-    "@company/internal-skill": "^2.0.0"
-  }
-}
-```
 
 ---
 
@@ -759,7 +829,7 @@ MIT
 
 - **Repository**: [https://github.com/mensfeld/craftdesk](https://github.com/mensfeld/craftdesk)
 - **Issues**: [https://github.com/mensfeld/craftdesk/issues](https://github.com/mensfeld/craftdesk/issues)
-- **Registry** (Coming Soon): Self-hosted registry server under development
+- **Registry**: Self-hosted registry server available at [CraftDesk Web](../web)
 
 ---
 
@@ -770,8 +840,11 @@ MIT
 - ✅ Direct file references
 - ✅ Monorepo support
 - ✅ Lockfile-based version control
-- 🚧 Self-hosted registry server (in development)
-- 🚧 Private registry authentication
+- ✅ Self-hosted registry server support
+- ✅ Registry search and info commands
+- ✅ ZIP archive extraction for registry crafts
+- ✅ SHA-256 checksum verification (MITM protection)
+- 🚧 Private registry authentication (token-based)
 - 🚧 Dependency conflict resolution
 - 🚧 Semantic versioning for registry packages
 

@@ -1,4 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
+import fs from 'fs';
+import path from 'path';
 import { configManager } from './config-manager';
 import { logger } from '../utils/logger';
 import { LockEntry } from '../types/craftdesk-lock';
@@ -97,9 +99,22 @@ export class RegistryClient {
   }
 
   async resolveDependencies(dependencies: Record<string, string>): Promise<ResolveResponse | null> {
-    // Get the default registry from craftdesk.json or use fallback
+    // Get the default registry from craftdesk.json
     const craftDesk = await configManager.getCraftDeskJson();
-    const registryUrl = craftDesk?.registries?.default?.url || 'https://craftdesk.ai';
+    const registryUrl = craftDesk?.registries?.default?.url;
+
+    // Registry is required only when trying to use registry features
+    if (!registryUrl) {
+      throw new Error(
+        'No registry configured. To use registry-based crafts, add a registry to your craftdesk.json:\n' +
+        '{\n' +
+        '  "registries": {\n' +
+        '    "default": { "url": "https://your-registry.com" }\n' +
+        '  }\n' +
+        '}\n\n' +
+        'Note: Git-based dependencies (GitHub URLs) do not require a registry.'
+      );
+    }
 
     const client = await this.getClient(registryUrl);
 
@@ -115,21 +130,52 @@ export class RegistryClient {
 
   async downloadCraft(downloadUrl: string, outputPath: string): Promise<void> {
     try {
+      // Ensure output directory exists
+      const outputDir = path.dirname(outputPath);
+      await fs.promises.mkdir(outputDir, { recursive: true });
+
       const response = await axios.get(downloadUrl, {
-        responseType: 'stream'
+        responseType: 'stream',
+        maxRedirects: 5
       });
 
-      // TODO: Save to file and extract
-      logger.debug(`Downloaded craft from ${downloadUrl}`);
+      // Create write stream and pipe response data
+      const writer = fs.createWriteStream(outputPath);
+
+      // Wait for download to complete
+      await new Promise<void>((resolve, reject) => {
+        // Handle errors from both the response stream and the write stream
+        response.data.on('error', (err: Error) => reject(err));
+        writer.on('error', (err: Error) => reject(err));
+        writer.on('finish', () => resolve());
+
+        // Start piping after handlers are set
+        response.data.pipe(writer);
+      });
+
+      logger.debug(`Downloaded craft archive to ${outputPath}`);
     } catch (error: any) {
       throw new Error(`Failed to download craft: ${error.message}`);
     }
   }
 
   async searchCrafts(query: string, type?: string): Promise<CraftInfo[]> {
-    // Get the default registry from craftdesk.json or use fallback
+    // Get the default registry from craftdesk.json
     const craftDesk = await configManager.getCraftDeskJson();
-    const registryUrl = craftDesk?.registries?.default?.url || 'https://craftdesk.ai';
+    const registryUrl = craftDesk?.registries?.default?.url;
+
+    // Registry is required for search
+    if (!registryUrl) {
+      throw new Error(
+        'No registry configured. To search for crafts, add a registry to your craftdesk.json:\n' +
+        '{\n' +
+        '  "registries": {\n' +
+        '    "default": { "url": "https://your-registry.com" }\n' +
+        '  }\n' +
+        '}\n\n' +
+        'Note: You can still add Git-based dependencies without a registry using GitHub URLs.'
+      );
+    }
 
     const client = await this.getClient(registryUrl);
 
@@ -146,17 +192,30 @@ export class RegistryClient {
   }
 
   private parseCraftName(craftName: string): [string, string] {
-    if (craftName.startsWith('@')) {
-      // Scoped craft: @acme/skill-name
-      const parts = craftName.substring(1).split('/');
-      if (parts.length === 2) {
-        return [`@${parts[0]}`, parts[1]];
+    // Handle author/name format (e.g., "john/rails-api")
+    if (craftName.includes('/') && !craftName.startsWith('@')) {
+      const parts = craftName.split('/');
+      // Validate exactly 2 non-empty parts
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        return [parts[0], parts[1]];
       }
     }
 
-    // Assume author is 'anthropic' for unscoped crafts (default)
-    // This should be configurable or determined by registry
-    return ['anthropic', craftName];
+    // Handle scoped format: @author/name
+    if (craftName.startsWith('@')) {
+      const parts = craftName.substring(1).split('/');
+      // Validate exactly 2 non-empty parts
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        return [parts[0], parts[1]];
+      }
+    }
+
+    // For unscoped names without author, throw error
+    // Users must specify author/name format for registry crafts
+    throw new Error(
+      `Invalid craft name format: "${craftName}". ` +
+      `Registry crafts must use "author/name" format with non-empty author and name (e.g., "john/rails-api")`
+    );
   }
 }
 
