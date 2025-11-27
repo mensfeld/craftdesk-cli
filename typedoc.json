@@ -1,0 +1,36 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/index.ts"],
+  "entryPointStrategy": "expand",
+  "out": "./docs",
+  "name": "CraftDesk CLI",
+  "readme": "./README.md",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Commands",
+    "Services",
+    "Types",
+    "Utilities",
+    "*"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/tests/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "hideGenerator": false,
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "navigationLinks": {
+    "GitHub": "https://github.com/craftdesk/cli",
+    "npm": "https://www.npmjs.com/package/craftdesk"
+  },
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}
