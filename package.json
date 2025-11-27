@@ -43,13 +43,13 @@
     "@types/node": "^20.10.5",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
-    "@vitest/coverage-v8": "^1.0.4",
-    "@vitest/ui": "^1.0.4",
+    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/ui": "^2.1.9",
     "eslint": "^9.39.1",
     "eslint-plugin-jsdoc": "^61.4.1",
     "typedoc": "^0.28.14",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.4"
+    "vitest": "^2.1.9"
   },
   "engines": {
     "node": ">=20.0.0"
