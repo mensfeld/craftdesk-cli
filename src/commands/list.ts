@@ -137,7 +137,7 @@ async function listCommand(options: any): Promise<void> {
   }
 }
 
-function getTypeIcon(type: string): string {
+function _getTypeIcon(type: string): string {
   switch (type) {
     case 'skill':
       return '📚';

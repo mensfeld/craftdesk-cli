@@ -14,6 +14,11 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "lint:docs": "eslint src/ --rule 'jsdoc/require-jsdoc: error'",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
     "prepare": "npm run build"
   },
   "keywords": [
@@ -34,12 +39,17 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
-    "@types/node": "^20.10.5",
     "@types/fs-extra": "^11.0.4",
-    "typescript": "^5.3.3",
-    "vitest": "^1.0.4",
+    "@types/node": "^20.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "@vitest/coverage-v8": "^1.0.4",
     "@vitest/ui": "^1.0.4",
-    "@vitest/coverage-v8": "^1.0.4"
+    "eslint": "^9.39.1",
+    "eslint-plugin-jsdoc": "^61.4.1",
+    "typedoc": "^0.28.14",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import { configManager } from './config-manager';
 import { logger } from '../utils/logger';
-import { LockEntry } from '../types/craftdesk-lock';
 
 export interface CraftInfo {
   name: string;

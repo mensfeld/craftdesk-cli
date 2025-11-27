@@ -9,11 +9,10 @@ import {
   writeCraftDeskLock
 } from '../utils/file-system';
 import { logger } from '../utils/logger';
-import { registryClient, CraftInfo } from '../services/registry-client';
+import { registryClient } from '../services/registry-client';
 import { installer } from '../services/installer';
 import { configManager } from '../services/config-manager';
 import { LockEntry, CraftDeskLock } from '../types/craftdesk-lock';
-import { CraftDeskJson } from '../types/craftdesk-json';
 import {
   isNewerVersion,
   sortTagsBySemver,
@@ -307,7 +306,7 @@ async function checkGitUpdate(name: string, entry: LockEntry): Promise<UpdateInf
   }
 }
 
-async function fetchNewLockEntry(update: UpdateInfo, latest?: boolean): Promise<LockEntry | null> {
+async function fetchNewLockEntry(update: UpdateInfo, _latest?: boolean): Promise<LockEntry | null> {
   if (update.source === 'registry') {
     // Fetch from registry
     const craftInfo = await registryClient.getCraftInfo(update.name, update.latest);
@@ -366,7 +365,7 @@ function displayUpdatePreview(updates: UpdateInfo[]): void {
   console.log('-'.repeat(nameWidth + colWidth * 2 + 10));
 
   for (const update of updates) {
-    const updateType = getUpdateType(update.current, update.latest);
+    const _updateType = getUpdateType(update.current, update.latest);
     const sourceCol = update.source === 'git' ? 'git' : 'registry';
 
     console.log(
@@ -392,7 +391,7 @@ function getRemoteTags(gitUrl: string): string[] {
     const lines = output.split('\n');
 
     for (const line of lines) {
-      const match = line.match(/refs\/tags\/([^\^]+)$/);
+      const match = line.match(/refs\/tags\/([^^]+)$/);
       if (match && match[1]) {
         tags.push(match[1]);
       }

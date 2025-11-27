@@ -9,7 +9,7 @@ export async function readCraftDeskJson(dir: string = process.cwd()): Promise<Cr
   try {
     const content = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(content);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -26,7 +26,7 @@ export async function readCraftDeskLock(dir: string = process.cwd()): Promise<Cr
   try {
     const content = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(content);
-  } catch (error) {
+  } catch {
     return null;
   }
 }

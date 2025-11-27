@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Generated documentation
+docs/
+
 # Test coverage
 coverage/
 .coverage/

@@ -186,7 +186,7 @@ async function checkGitUpdate(name: string, entry: LockEntry): Promise<OutdatedI
     const currentTag = entry.tag;
     const currentBranch = entry.branch || 'main';
 
-    let latestRef = '';
+    let _latestRef = '';
     let latestDisplay = '';
     let hasUpdate = false;
 
@@ -252,7 +252,7 @@ function getRemoteTags(gitUrl: string): string[] {
 
     for (const line of lines) {
       // Extract tag name from refs/tags/tagname
-      const match = line.match(/refs\/tags\/([^\^]+)$/);
+      const match = line.match(/refs\/tags\/([^^]+)$/);
       if (match && match[1]) {
         tags.push(match[1]);
       }

@@ -205,7 +205,7 @@ async function collectCraftFiles(
             path: relativePath,
             content
           });
-        } catch (error: any) {
+        } catch (_error: unknown) {
           logger.warn(`Could not read file: ${relativePath}`);
         }
       }

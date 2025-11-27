@@ -2,7 +2,6 @@ import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
 import { CraftDeskJson } from '../types/craftdesk-json';
-import { logger } from '../utils/logger';
 
 /**
  * Global configuration stored in ~/.craftdesk/config.json
@@ -70,7 +69,7 @@ export class ConfigManager {
       const scope = craftName.split('/')[0];
 
       // Look for a registry with matching scope
-      for (const [name, registry] of Object.entries(craftDesk.registries)) {
+      for (const [_name, registry] of Object.entries(craftDesk.registries)) {
         if (registry.scope === scope) {
           return registry.url;
         }
@@ -224,7 +223,7 @@ export class ConfigManager {
       const content = await fs.readFile(craftDeskPath, 'utf-8');
       this.craftDeskJson = JSON.parse(content);
       return this.craftDeskJson;
-    } catch (error) {
+    } catch {
       return null;
     }
   }

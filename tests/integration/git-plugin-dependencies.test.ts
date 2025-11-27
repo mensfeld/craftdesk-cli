@@ -23,12 +23,19 @@ const INSTALL_DIR = path.join(TEST_DIR, '.claude');
 describe('Git Plugin Dependency Resolution', () => {
   let gitResolver: GitResolver;
   let pluginResolver: PluginResolver;
+  let originalCwd: string;
 
   beforeEach(async () => {
+    // Save original cwd
+    originalCwd = process.cwd();
+
     // Clean up test directory
     await fs.remove(TEST_DIR);
     await fs.ensureDir(TEST_DIR);
     await fs.ensureDir(INSTALL_DIR);
+
+    // Change to test directory so installer installs there
+    process.chdir(TEST_DIR);
 
     // Initialize services
     gitResolver = new GitResolver();
@@ -36,6 +43,9 @@ describe('Git Plugin Dependency Resolution', () => {
   });
 
   afterEach(async () => {
+    // Restore original cwd
+    process.chdir(originalCwd);
+
     // Clean up
     await fs.remove(TEST_DIR);
   });
@@ -53,24 +63,23 @@ describe('Git Plugin Dependency Resolution', () => {
 
       // Resolve git dependency
       const gitInfo = {
-        git: repoPath,
+        url: repoPath,
         branch: 'main'
       };
 
       const resolved = await gitResolver.resolveGitDependency(gitInfo);
 
       // Verify resolution
-      expect(resolved.git).toBe(repoPath);
-      expect(resolved.commit).toBeDefined();
-      expect(resolved.integrity).toMatch(/^sha256-git:/);
+      expect(resolved.url).toBe(repoPath);
+      expect(resolved.resolvedCommit).toBeDefined();
 
       // Install plugin
       const pluginDir = path.join(INSTALL_DIR, 'plugins', 'simple-git-plugin');
       const lockEntry = {
         version: '1.0.0',
-        git: resolved.git,
-        commit: resolved.commit,
-        integrity: resolved.integrity,
+        git: resolved.url,
+        commit: resolved.resolvedCommit,
+        integrity: `sha256-git:${resolved.resolvedCommit}`,
         type: 'plugin',
         author: 'test',
         dependencies: {}
@@ -108,7 +117,7 @@ describe('Git Plugin Dependency Resolution', () => {
 
       // Resolve git dependency
       const gitInfo = {
-        git: repoPath,
+        url: repoPath,
         branch: 'main'
       };
 
@@ -118,9 +127,9 @@ describe('Git Plugin Dependency Resolution', () => {
       const pluginDir = path.join(INSTALL_DIR, 'plugins', 'git-plugin-with-deps');
       const lockEntry = {
         version: '2.0.0',
-        git: resolved.git,
-        commit: resolved.commit,
-        integrity: resolved.integrity,
+        git: resolved.url,
+        commit: resolved.resolvedCommit,
+        integrity: `sha256-git:${resolved.resolvedCommit}`,
         type: 'plugin',
         author: 'test',
         dependencies: {
@@ -185,7 +194,7 @@ describe('Git Plugin Dependency Resolution', () => {
 
       // Resolve main plugin
       const mainGitInfo = {
-        git: mainRepoPath,
+        url: mainRepoPath,
         branch: 'main'
       };
 
@@ -195,9 +204,9 @@ describe('Git Plugin Dependency Resolution', () => {
       const mainPluginDir = path.join(INSTALL_DIR, 'plugins', 'main-git-plugin');
       const mainLockEntry = {
         version: '3.0.0',
-        git: mainResolved.git,
-        commit: mainResolved.commit,
-        integrity: mainResolved.integrity,
+        git: mainResolved.url,
+        commit: mainResolved.resolvedCommit,
+        integrity: `sha256-git:${mainResolved.resolvedCommit}`,
         type: 'plugin',
         author: 'test',
         dependencies: {
@@ -228,16 +237,16 @@ describe('Git Plugin Dependency Resolution', () => {
 
       // Now install the dependency plugin
       const depResolved = await gitResolver.resolveGitDependency({
-        git: depRepoPath,
+        url: depRepoPath,
         branch: 'main'
       });
 
       const depPluginDir = path.join(INSTALL_DIR, 'plugins', 'dependency-plugin');
       const depLockEntry = {
         version: '1.5.0',
-        git: depResolved.git,
-        commit: depResolved.commit,
-        integrity: depResolved.integrity,
+        git: depResolved.url,
+        commit: depResolved.resolvedCommit,
+        integrity: `sha256-git:${depResolved.resolvedCommit}`,
         type: 'plugin',
         author: 'test',
         dependencies: {},
@@ -270,15 +279,15 @@ describe('Git Plugin Dependency Resolution', () => {
       });
 
       // Resolve and install
-      const gitInfo = { git: repoPath, branch: 'main' };
+      const gitInfo = { url: repoPath, branch: 'main' };
       const resolved = await gitResolver.resolveGitDependency(gitInfo);
 
       const pluginDir = path.join(INSTALL_DIR, 'plugins', 'full-git-plugin');
       const lockEntry = {
         version: '1.0.0',
-        git: resolved.git,
-        commit: resolved.commit,
-        integrity: resolved.integrity,
+        git: resolved.url,
+        commit: resolved.resolvedCommit,
+        integrity: `sha256-git:${resolved.resolvedCommit}`,
         type: 'plugin',
         author: 'test',
         dependencies: {}
@@ -320,15 +329,15 @@ describe('Git Plugin Dependency Resolution', () => {
       });
 
       // Resolve and install
-      const gitInfo = { git: repoPath, branch: 'main' };
+      const gitInfo = { url: repoPath, branch: 'main' };
       const resolved = await gitResolver.resolveGitDependency(gitInfo);
 
       const pluginDir = path.join(INSTALL_DIR, 'plugins', 'partial-manifest-plugin');
       const lockEntry = {
         version: '1.0.0',
-        git: resolved.git,
-        commit: resolved.commit,
-        integrity: resolved.integrity,
+        git: resolved.url,
+        commit: resolved.resolvedCommit,
+        integrity: `sha256-git:${resolved.resolvedCommit}`,
         type: 'plugin',
         author: 'test',
         dependencies: {}

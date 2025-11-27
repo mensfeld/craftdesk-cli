@@ -14,8 +14,7 @@ import type {
   ClaudeSettings,
   PluginConfig,
   MCPServerConfig,
-  WrappedCraftConfig,
-  DEFAULT_CLAUDE_SETTINGS
+  WrappedCraftConfig
 } from '../types/claude-settings';
 import { logger } from '../utils/logger';
 

@@ -92,7 +92,7 @@ async function removeCommand(craftName: string, options: any = {}): Promise<void
 
       // Update requiredBy for other plugins
       if (lockfile.pluginTree) {
-        for (const [pluginName, pluginInfo] of Object.entries(lockfile.pluginTree)) {
+        for (const [_pluginName, pluginInfo] of Object.entries(lockfile.pluginTree)) {
           if (pluginInfo.requiredBy) {
             pluginInfo.requiredBy = pluginInfo.requiredBy.filter(dep => dep !== craftName);
           }

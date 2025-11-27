@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import axios from 'axios';
 import AdmZip from 'adm-zip';
+import { execSync } from 'child_process';
 import { logger } from '../utils/logger';
 import { configManager } from './config-manager';
 import { settingsManager } from './settings-manager';
@@ -175,7 +176,6 @@ export class Installer {
 
     try {
       // Clone the repository
-      const { execSync } = require('child_process');
 
       // Build clone command with appropriate ref
       let cloneCmd = `git clone --depth 1`;
@@ -193,7 +193,12 @@ export class Installer {
 
       // If specific commit, checkout that commit
       if (entry.commit) {
-        execSync(`cd ${tempDir} && git fetch --unshallow && git checkout ${entry.commit}`, { stdio: 'pipe' });
+        // Check if repo is shallow before trying to unshallow
+        const isShallow = await fs.pathExists(path.join(tempDir, '.git', 'shallow'));
+        if (isShallow) {
+          execSync(`cd ${tempDir} && git fetch --unshallow`, { stdio: 'pipe' });
+        }
+        execSync(`cd ${tempDir} && git checkout ${entry.commit}`, { stdio: 'pipe' });
       }
 
       // Handle direct file reference
@@ -435,9 +440,19 @@ export class Installer {
       if (await fs.pathExists(typeDir)) {
         try {
           const entries = await fs.readdir(typeDir, { withFileTypes: true });
-          const items = entries
-            .filter(entry => entry.isDirectory())
-            .map(entry => entry.name);
+          let items: string[];
+
+          // Commands and hooks are files (*.md), not directories
+          if (type === 'commands' || type === 'hooks') {
+            items = entries
+              .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
+              .map(entry => entry.name);
+          } else {
+            // Skills and agents are directories
+            items = entries
+              .filter(entry => entry.isDirectory())
+              .map(entry => entry.name);
+          }
 
           if (items.length > 0) {
             components[type] = items;

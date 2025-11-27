@@ -116,6 +116,20 @@ Total: 2 crafts installed
 - [Core Concepts](#core-concepts)
 - [Plugin System](#plugin-system)
 - [Command Reference](#command-reference)
+  - [init](#craftdesk-init-options)
+  - [install](#craftdesk-install-options)
+  - [add](#craftdesk-add-craft-options)
+  - [remove](#craftdesk-remove-craft)
+  - [list](#craftdesk-list-options)
+  - [search](#craftdesk-search-query-options)
+  - [info](#craftdesk-info-craft)
+  - [outdated](#craftdesk-outdated)
+  - [update](#craftdesk-update-craft)
+  - [publish](#craftdesk-publish-options)
+- [Authentication](#authentication)
+  - [login](#craftdesk-login-options)
+  - [logout](#craftdesk-logout-options)
+  - [whoami](#craftdesk-whoami-options)
 - [Dependency Sources](#dependency-sources)
 - [Monorepo Support](#monorepo-support)
 - [craftdesk.json Reference](#craftdeskjson-reference)
@@ -542,6 +556,253 @@ Installed crafts:
 
 Total: 3 crafts installed
 ```
+
+---
+
+### `craftdesk search <query> [options]`
+
+Search for crafts in the registry.
+
+**Options:**
+- `-t, --type <type>` - Filter by type (skill, agent, command, hook, plugin)
+
+**Examples:**
+```bash
+# Search for crafts
+craftdesk search kafka
+
+# Search for skills only
+craftdesk search rails --type skill
+
+# Search for plugins
+craftdesk search standards --type plugin
+```
+
+**Example output:**
+```
+Search results for "kafka":
+
+  john/kafka-processing@2.1.0 (skill)
+    Expert knowledge for processing Kafka messages
+
+  jane/kafka-agent@1.5.3 (agent)
+    Autonomous agent for Kafka stream management
+
+Found 2 crafts
+```
+
+---
+
+### `craftdesk info <craft>`
+
+Display detailed information about a craft from the registry.
+
+**Examples:**
+```bash
+# Get info about a craft
+craftdesk info john/rails-api
+
+# Get info about a specific version
+craftdesk info john/rails-api@2.1.0
+```
+
+**Example output:**
+```
+john/rails-api@2.1.0
+
+  Description: Rails API development best practices
+  Type:        skill
+  Author:      john
+  License:     MIT
+  Downloads:   1,234
+
+  Versions:
+    2.1.0 (latest)
+    2.0.0
+    1.5.0
+
+  Dependencies:
+    jane/postgres-toolkit: ^1.0.0
+```
+
+---
+
+### `craftdesk outdated`
+
+Check for outdated dependencies that have newer versions available.
+
+**Examples:**
+```bash
+# Check all dependencies
+craftdesk outdated
+```
+
+**Example output:**
+```
+Checking for outdated dependencies...
+
+Outdated crafts:
+
+  john/rails-api
+    Current: 2.0.0
+    Latest:  2.1.0
+    Type:    skill
+
+  jane/postgres-toolkit
+    Current: 1.2.0
+    Latest:  1.5.0
+    Type:    skill
+
+2 outdated crafts found
+Run 'craftdesk update' to update all, or 'craftdesk update <craft>' to update specific crafts.
+```
+
+---
+
+### `craftdesk update [craft]`
+
+Update dependencies to their latest compatible versions.
+
+**Examples:**
+```bash
+# Update all outdated dependencies
+craftdesk update
+
+# Update a specific craft
+craftdesk update john/rails-api
+```
+
+**What it does:**
+1. Checks for newer versions in the registry
+2. Downloads and installs updates
+3. Updates craftdesk.lock with new versions
+4. Verifies checksums for security
+
+---
+
+### `craftdesk publish [options]`
+
+Publish a craft to the registry.
+
+**Options:**
+- `--visibility <level>` - Set visibility: public, private, or organization (default: public)
+
+**Examples:**
+```bash
+# Publish the current craft
+craftdesk publish
+
+# Publish as private
+craftdesk publish --visibility private
+
+# Publish to organization only
+craftdesk publish --visibility organization
+```
+
+**Prerequisites:**
+- Must be logged in (`craftdesk login`)
+- Must have a valid `craftdesk.json` in current directory
+- Craft files must exist (SKILL.md, AGENT.md, etc.)
+
+**What it does:**
+1. Reads craftdesk.json for metadata
+2. Collects all craft files
+3. Creates a new version on the registry
+4. Publishes with specified visibility
+
+---
+
+## Authentication
+
+CraftDesk supports authenticated access to private registries.
+
+### `craftdesk login [options]`
+
+Authenticate with a registry using an API token.
+
+**Options:**
+- `-r, --registry <url>` - Registry URL (uses default from craftdesk.json if not specified)
+
+**Examples:**
+```bash
+# Login to default registry
+craftdesk login
+
+# Login to a specific registry
+craftdesk login --registry https://private.company.com
+```
+
+**How it works:**
+1. Prompts for your API token
+2. Verifies the token with the registry
+3. Stores credentials in `~/.craftdesk/config.json`
+4. Token is used for subsequent registry operations
+
+**Getting an API token:**
+- Log in to your CraftDesk registry web interface
+- Navigate to Settings → API Tokens
+- Generate a new token
+
+---
+
+### `craftdesk logout [options]`
+
+Remove stored authentication credentials.
+
+**Options:**
+- `-r, --registry <url>` - Registry URL (uses default from craftdesk.json if not specified)
+
+**Examples:**
+```bash
+# Logout from default registry
+craftdesk logout
+
+# Logout from specific registry
+craftdesk logout --registry https://private.company.com
+```
+
+---
+
+### `craftdesk whoami [options]`
+
+Display the currently logged-in user.
+
+**Options:**
+- `-r, --registry <url>` - Registry URL (uses default from craftdesk.json if not specified)
+
+**Examples:**
+```bash
+# Check current user
+craftdesk whoami
+
+# Check user for specific registry
+craftdesk whoami --registry https://private.company.com
+```
+
+**Example output:**
+```
+Logged in to https://craftdesk.ai as john (john@example.com)
+Organization: acme-corp
+```
+
+---
+
+### Environment Variable Authentication
+
+For CI/CD environments, you can use environment variables instead of `craftdesk login`:
+
+```bash
+# For a registry named "company-private" in craftdesk.json
+export CRAFTDESK_AUTH_COMPANY_PRIVATE=your_api_token_here
+
+# For the default registry
+export CRAFTDESK_AUTH_LOCALHOST_3000=your_api_token_here
+
+# The variable name is derived from the registry URL:
+# https://example.com -> CRAFTDESK_AUTH_EXAMPLE_COM
+```
+
+Environment variables take precedence over stored credentials.
 
 ---
 
@@ -1044,7 +1305,6 @@ MIT
 - ✅ Monorepo support
 - ✅ Lockfile-based version control
 - ✅ Self-hosted registry server support
-- ✅ Registry search and info commands
 - ✅ ZIP archive extraction for registry crafts
 - ✅ **Plugin system** with dependency management
 - ✅ **Auto-install plugin dependencies** (recursive)
@@ -1053,20 +1313,24 @@ MIT
 - ✅ **Craft wrapping** (--as-plugin flag)
 - ✅ **Plugin tree visualization**
 - ✅ **Dependency removal protection**
+- ✅ SHA-256 checksum verification (MITM protection)
+- ✅ Registry search and info commands
+- ✅ `craftdesk publish` command
+- ✅ `craftdesk outdated` command
+- ✅ `craftdesk update` command
+- ✅ **Authentication system** (login/logout/whoami)
+- ✅ **Private registry authentication** (token-based)
+- ✅ **Environment variable auth** (CI/CD support)
+- ✅ Semantic versioning for registry packages
 
 ### Planned
 - 🔲 Plugin marketplace/directory
-- 🔲 `craftdesk info <plugin>` command
 - 🔲 `craftdesk validate <plugin>` command
-- 🔲 `craftdesk publish` command
 - 🔲 Multiple dependency versions support
 - 🔲 Peer dependency warnings
 - 🔲 Persistent download cache
 - 🔲 Offline installation mode
-- ✅ SHA-256 checksum verification (MITM protection)
-- 🚧 Private registry authentication (token-based)
-- 🚧 Dependency conflict resolution
-- 🚧 Semantic versioning for registry packages
+- 🔲 Interactive dependency conflict resolution
 
 ---
 
