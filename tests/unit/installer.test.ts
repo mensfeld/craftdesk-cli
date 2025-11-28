@@ -143,9 +143,9 @@ describe('Installer', () => {
 
       // Mock AdmZip extraction
       const mockExtract = vi.fn();
-      (AdmZip as any).mockImplementation(() => ({
-        extractAllTo: mockExtract
-      }));
+      (AdmZip as any).mockImplementation(function() {
+        return { extractAllTo: mockExtract };
+      });
 
       const lockfile = {
         version: '1.0.0',
@@ -238,9 +238,9 @@ describe('Installer', () => {
 
         // Mock ZIP extraction
         const mockExtract = vi.fn();
-        (AdmZip as any).mockImplementation(() => ({
-          extractAllTo: mockExtract
-        }));
+        (AdmZip as any).mockImplementation(function() {
+          return { extractAllTo: mockExtract };
+        });
 
         const entry = {
           version: '1.0.0',
@@ -335,9 +335,9 @@ describe('Installer', () => {
 
         // Mock ZIP extraction
         const mockExtract = vi.fn();
-        (AdmZip as any).mockImplementation(() => ({
-          extractAllTo: mockExtract
-        }));
+        (AdmZip as any).mockImplementation(function() {
+          return { extractAllTo: mockExtract };
+        });
 
         const entry = {
           version: '1.0.0',
@@ -379,9 +379,9 @@ describe('Installer', () => {
         (verifyFileChecksum as any).mockResolvedValue(true);
 
         const mockExtract = vi.fn();
-        (AdmZip as any).mockImplementation(() => ({
-          extractAllTo: mockExtract
-        }));
+        (AdmZip as any).mockImplementation(function() {
+          return { extractAllTo: mockExtract };
+        });
 
         const entry = {
           version: '1.0.0',
@@ -442,11 +442,13 @@ describe('Installer', () => {
         (verifyFileChecksum as any).mockResolvedValue(true);
 
         // Mock failed extraction
-        (AdmZip as any).mockImplementation(() => ({
-          extractAllTo: vi.fn(() => {
-            throw new Error('Corrupt archive');
-          })
-        }));
+        (AdmZip as any).mockImplementation(function() {
+          return {
+            extractAllTo: vi.fn(() => {
+              throw new Error('Corrupt archive');
+            })
+          };
+        });
 
         const entry = {
           version: '1.0.0',
@@ -493,9 +495,9 @@ describe('Installer', () => {
         (verifyFileChecksum as any).mockResolvedValue(true);
 
         const mockExtract = vi.fn();
-        (AdmZip as any).mockImplementation(() => ({
-          extractAllTo: mockExtract
-        }));
+        (AdmZip as any).mockImplementation(function() {
+          return { extractAllTo: mockExtract };
+        });
 
         const entry = {
           version: '1.0.0',
@@ -531,9 +533,9 @@ describe('Installer', () => {
         (verifyFileChecksum as any).mockResolvedValue(true);
 
         const mockExtract = vi.fn();
-        (AdmZip as any).mockImplementation(() => ({
-          extractAllTo: mockExtract
-        }));
+        (AdmZip as any).mockImplementation(function() {
+          return { extractAllTo: mockExtract };
+        });
 
         const entry = {
           version: '1.0.0',
@@ -569,9 +571,9 @@ describe('Installer', () => {
         (verifyFileChecksum as any).mockResolvedValue(true);
 
         const mockExtract = vi.fn();
-        (AdmZip as any).mockImplementation(() => ({
-          extractAllTo: mockExtract
-        }));
+        (AdmZip as any).mockImplementation(function() {
+          return { extractAllTo: mockExtract };
+        });
 
         const entry = {
           version: '1.0.0',
